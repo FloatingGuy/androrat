@@ -24,7 +24,7 @@ public class Connection
 	int port = 5555;
 	DataOutputStream out;
 	DataInputStream in;
-	
+
 	boolean stop = false;
 	ByteBuffer readInstruction;
 	Mux m;
@@ -90,12 +90,12 @@ public class Connection
 	public ByteBuffer getInstruction() throws Exception
 	{
 		readInstruction = receive.read();
-		
+
 		if(dem.receive(readInstruction))
 			readInstruction.compact();
 		else
 			readInstruction.clear();
-		
+
 		return readInstruction;
 	}
 
@@ -103,12 +103,12 @@ public class Connection
 	{
 		m.send(chan, packet);
 	}
-	
+
 	public void stop() {
 		try {
 			s.close();
 		} catch (IOException e) {
-			
+
 		}
 	}
 }

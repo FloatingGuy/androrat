@@ -10,7 +10,7 @@ import android.widget.EditText;
 
 public class LauncherActivity extends Activity {
     /** Called when the activity is first created. */
-	
+
 	Intent Client, ClientAlt;
 	Button btnStart, btnStop;
 	EditText ipfield, portfield;
@@ -21,12 +21,12 @@ public class LauncherActivity extends Activity {
 
         Client = new Intent(this, Client.class);
         Client.setAction(LauncherActivity.class.getName());
-        
+
         btnStart = (Button) findViewById(R.id.buttonstart);
         btnStop = (Button) findViewById(R.id.buttonstop);
         ipfield = (EditText) findViewById(R.id.ipfield);
         portfield = (EditText) findViewById(R.id.portfield);
-        
+
         btnStart.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
             	Client.putExtra("IP", ipfield.getText().toString());
@@ -34,16 +34,16 @@ public class LauncherActivity extends Activity {
                 startService(Client);
                 btnStart.setEnabled(false);
                 btnStop.setEnabled(true);
-                //finish();                
+                //finish();
             }
         });
 
         btnStop.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {             
-                stopService(Client);  
+            public void onClick(View view) {
+                stopService(Client);
                 btnStart.setEnabled(true);
                 btnStop.setEnabled(false);
-                //finish(); 
+                //finish();
             }
         });
     }
